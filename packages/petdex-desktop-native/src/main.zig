@@ -4675,13 +4675,21 @@ fn flockLayout(model: *const Model) flock_mod.LayoutSpec {
 /// artwork is not yet. V3 gives each session its own pet.
 fn flockView(ui: *AppUi, model: *const Model) AppUi.Node {
     if (model.flock.len == 0 or !model.sheet_loaded) {
-        var root = ui.column(.{ .grow = 1 }, .{
+        const content = ui.column(.{ .grow = 1 }, .{
             ui.el(.stack, .{ .height = companion_header_h, .window_drag = true }, .{}),
             ui.column(.{ .grow = 1, .main = .center, .cross = .center }, .{
                 ui.text(.{ .size = .sm, .text_alignment = .center }, "No agents running"),
             }),
         });
+        // See the matching comment in settingsView: `.column`'s
+        // style.background is never painted by the renderer, so this
+        // must be a `.panel` (one of the few kinds whose chrome function
+        // reads it), flattened to a plain edge-to-edge rect via
+        // radius=0 + a transparent border.
+        var root = ui.el(.panel, .{ .grow = 1 }, .{content});
         root.widget.style.background = settingsBackground(model);
+        root.widget.style.radius = 0;
+        root.widget.style.border = canvas.Color.rgba8(0, 0, 0, 0);
         return root;
     }
     const spec = flockLayout(model);
@@ -4699,11 +4707,14 @@ fn flockView(ui: *AppUi, model: *const Model) AppUi.Node {
         rows[row_count] = ui.row(.{ .gap = spec.gap, .cross = .end }, cells[0..cell_count]);
         row_count += 1;
     }
-    var root = ui.column(.{ .grow = 1 }, .{
+    const content = ui.column(.{ .grow = 1 }, .{
         ui.el(.stack, .{ .height = companion_header_h, .window_drag = true }, .{}),
         ui.column(.{ .grow = 1, .main = .center, .cross = .center, .gap = spec.gap }, rows[0..row_count]),
     });
+    var root = ui.el(.panel, .{ .grow = 1 }, .{content});
     root.widget.style.background = settingsBackground(model);
+    root.widget.style.radius = 0;
+    root.widget.style.border = canvas.Color.rgba8(0, 0, 0, 0);
     return root;
 }
 

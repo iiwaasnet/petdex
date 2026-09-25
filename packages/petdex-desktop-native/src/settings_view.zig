@@ -748,11 +748,29 @@ pub fn settingsView(ui: *AppUi, model: *const Model, icons: IconAtlas, thumbs: T
         // of the scroll extent, so the last card needs explicit air.
         ui.el(.stack, .{ .height = 8 }, .{}),
     })});
-    var root = ui.column(.{ .grow = 1 }, .{
+    const content = ui.column(.{ .grow = 1 }, .{
         ui.el(.stack, .{ .height = companion_header_h, .window_drag = true }, .{}),
         page,
     });
+    // A `.column`'s `style.background` is never painted by the canvas
+    // renderer — only specific widget kinds (`.panel`, controls) have
+    // their own background-fill chrome. `settingsBackground` is real
+    // (opaque, themed) but was previously inert on this root, and the
+    // window's canvas actually cleared through the shared, pet-window-
+    // owned `tokens_fn` (always zero alpha on AppKit/Win32 — see
+    // `petdexTokens`), painting this whole window solid black. Wrap the
+    // column in a `.panel` sized to the FULL window instead: `.panel` is
+    // one of the few kinds whose chrome function
+    // (`emitPanelWidgetChrome`) actually reads `style.background`, and
+    // forcing `radius`/`border` to nothing here makes it paint as a
+    // plain, edge-to-edge opaque rect rather than a rounded card. Its
+    // shadow still renders unconditionally when opaque, but projects
+    // outward from the panel's own edges — which already fill the
+    // window, so the window's own bounds clip it away.
+    var root = ui.el(.panel, .{ .grow = 1 }, .{content});
     root.widget.style.background = settingsBackground(model);
+    root.widget.style.radius = 0;
+    root.widget.style.border = canvas.Color.rgba8(0, 0, 0, 0);
     return root;
 }
 
