@@ -19,10 +19,17 @@ Runtime-loaded pet animating its real atlas in a chromeless window:
 ## Build & run
 
 ```bash
-native build -Dautomation
+native build -Dautomation -Dtrace=off
 PETDEX_PET=boba ./zig-out/bin/petdex-desktop-native
 native automate screenshot pet-canvas
 ```
+
+`-Dtrace=off` matters: the SDK's own trace default (`-Dtrace=events`) logs a
+`runtime.event` line to `native-sdk.jsonl` for every dispatched event,
+including every presented GPU frame — unbounded, no rotation, no size cap.
+On a 60fps window that grows to multiple GB within days. The release build
+(`scripts/sign-macos.sh`) already passes `-Dtrace=off`; this dev command
+didn't, so a plain local build was the only path that hit it.
 
 Requires the `@native-sdk/cli` global (`bun add -g @native-sdk/cli`).
 
